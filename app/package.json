@@ -1,0 +1,16 @@
+{
+  "name": "techchallenge",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsup index.ts --out-dir build",
+    "start": "node build/index.js",
+    "dev": "tsx watch index.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}
