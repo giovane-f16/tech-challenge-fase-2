@@ -27,13 +27,32 @@ var import_express2 = __toESM(require("express"));
 
 // src/routes/Posts.ts
 var import_express = require("express");
-var router = (0, import_express.Router)();
+
+// src/schemas/Post.ts
+var import_zod = require("zod");
+var postSchema = import_zod.z.object({
+  titulo: import_zod.z.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
+  conteudo: import_zod.z.string().min(1, "Conte\xFAdo \xE9 obrigat\xF3rio"),
+  autor: import_zod.z.string().min(1, "Autor \xE9 obrigat\xF3rio")
+});
+var partialPostSchema = postSchema.partial();
+
+// src/controllers/Post.ts
 var posts = [];
 var currentId = 1;
-router.get("/", (req, res) => {
+var getAllPosts = (req, res) => {
   res.json(posts);
-});
-router.get("/search", (req, res) => {
+};
+var getPostById = (req, res) => {
+  const id = Number(req.params.id);
+  const post = posts.find((p) => p.id === id);
+  if (!post) {
+    res.status(404).json({ error: "Post n\xE3o encontrado" });
+    return;
+  }
+  res.json(post);
+};
+var searchPosts = (req, res) => {
   const { query } = req.query;
   if (!query || typeof query !== "string") {
     res.status(400).json({ error: "Par\xE2metro 'query' obrigat\xF3rio" });
@@ -43,88 +62,87 @@ router.get("/search", (req, res) => {
     (p) => p.titulo.toLowerCase().includes(query) || p.conteudo.toLowerCase().includes(query)
   );
   res.json(resultado);
-});
-router.get("/date/:data", (req, res) => {
+};
+var getPostsByDate = (req, res) => {
   const { data } = req.params;
   const regex = /^\d{4}-\d{2}-\d{2}$/;
   if (!regex.test(data)) {
-    res.status(400).json({ error: "Formato de data inv\xE1lido. Use yyyy-mm-dd" });
+    res.status(400).json({ error: "Formato inv\xE1lido. Use yyyy-mm-dd" });
     return;
   }
   const resultado = posts.filter((p) => {
     const [dia, mes, ano] = p.dataDeCriacao.split("/");
-    const dataFormatada = `${ano}-${mes}-${dia}`;
-    return dataFormatada === data;
+    return `${ano}-${mes}-${dia}` === data;
   });
   if (resultado.length === 0) {
-    res.status(404).json({ error: "N\xE3o foi encontrado nenhum post com a data informada." });
+    res.status(404).json({ error: "Nenhum post encontrado para essa data." });
     return;
   }
   res.json(resultado);
-});
-router.get("/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const post = posts.find((p) => p.id === id);
-  if (!post) {
-    res.status(404).json({ error: `Post n\xE3o encontrado com este ID: ${id}` });
+};
+var createPost = (req, res) => {
+  const parsed = postSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.format() });
     return;
   }
-  res.json(post);
-});
-router.post("/", (req, res) => {
-  const { titulo, conteudo, autor } = req.body;
-  if (!titulo || !conteudo || !autor) {
-    res.status(400).json({ error: "Todos os campos s\xE3o obrigat\xF3rios" });
-    return;
-  }
-  let dataDeCriacao = new Intl.DateTimeFormat("pt-BR").format(/* @__PURE__ */ new Date());
+  const dataDeCriacao = new Intl.DateTimeFormat("pt-BR").format(/* @__PURE__ */ new Date());
   const novoPost = {
     id: currentId++,
-    titulo,
-    conteudo,
-    autor,
+    ...parsed.data,
     dataDeCriacao
   };
   posts.push(novoPost);
   res.status(201).json(novoPost);
-});
-router.put("/:id", (req, res) => {
+};
+var updatePost = (req, res) => {
   const id = Number(req.params.id);
-  const { titulo, conteudo, autor } = req.body;
   const postIndex = posts.findIndex((p) => p.id === id);
   if (postIndex === -1) {
-    res.status(404).json({ error: `Post n\xE3o encontrado com este ID: ${id}` });
+    res.status(404).json({ error: `N\xE3o encontrado post com o ID: ${id}` });
     return;
   }
-  let dataDeAtualizacao = new Intl.DateTimeFormat("pt-BR").format(/* @__PURE__ */ new Date());
-  const postAntigo = posts[postIndex];
-  const postAtualizado = {
-    ...postAntigo,
-    titulo: titulo ?? postAntigo.titulo,
-    conteudo: conteudo ?? postAntigo.conteudo,
-    autor: autor ?? postAntigo.autor,
+  const parsed = partialPostSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.format() });
+    return;
+  }
+  const dataDeAtualizacao = new Intl.DateTimeFormat("pt-BR").format(/* @__PURE__ */ new Date());
+  const antigo = posts[postIndex];
+  const atualizado = {
+    ...antigo,
+    ...parsed.data,
     dataDeAtualizacao
   };
-  posts[postIndex] = postAtualizado;
-  res.json(postAtualizado);
-});
-router.delete("/:id", (req, res) => {
+  posts[postIndex] = atualizado;
+  res.json(atualizado);
+};
+var deletePost = (req, res) => {
   const id = Number(req.params.id);
   const index = posts.findIndex((p) => p.id === id);
   if (index === -1) {
-    res.status(404).json({ error: `Post n\xE3o encontrado com este ID: ${id}` });
+    res.status(404).json({ error: `N\xE3o encontrado post com o ID: ${id}` });
     return;
   }
   posts.splice(index, 1);
   res.status(204).send();
-});
+};
+
+// src/routes/Posts.ts
+var router = (0, import_express.Router)();
+router.get("/", getAllPosts);
+router.get("/search", searchPosts);
+router.get("/date/:data", getPostsByDate);
+router.get("/:id", getPostById);
+router.post("/", createPost);
+router.put("/:id", updatePost);
+router.delete("/:id", deletePost);
 var Posts_default = router;
 
 // index.ts
 var app = (0, import_express2.default)();
 app.use(import_express2.default.json());
-app.get("/", (req, res) => {
-  res.json({ message: "hello world with Typescript!!" });
-});
 app.use("/posts", Posts_default);
-app.listen(3e3, () => console.log("server running on port 3000"));
+app.listen(3e3, () => {
+  console.log("Servidor rodando em http://localhost:3000");
+});
