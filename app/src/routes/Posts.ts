@@ -11,13 +11,13 @@ export async function createRouter() {
 	const post_model = new PostModel(database);
 	const controller = new PostController(post_model);
 
-	router.get("/", 		  controller.getAllPosts);
-	// router.get("/search", 	  controller.searchPosts);
-	// router.get("/data/:data", controller.getPostsByDate);
-	// router.get("/:id", 		  controller.getPostById);
-	// router.post("/", 		  controller.createPost);
-	// router.put("/:id", 		  controller.updatePost);
-	// router.delete("/:id", 	  controller.deletePost);
+	router.get("/", 		  controller.getAll);
+	router.get("/search", 	  controller.search);
+	router.get("/date/:data", controller.getByDate);
+	router.get("/:id", 		  controller.getById);
+	router.post("/", 		  controller.create);
+	router.put("/:id", 		  controller.update);
+	router.delete("/:id", 	  controller.delete);
 	return router;
 }
 

@@ -9,117 +9,96 @@ export class Post {
 		this.post_model = post_model;
 	}
 
-	getAllPosts =  async (req: Request, res: Response) => {
+	getAll = async (req: Request, res: Response) => {
 		const posts = await this.post_model.findAll();
 		res.json(posts);
-	};
+	}
 
-	// getPostById = (req: Request, res: Response) => {
-	// 	const id = Number(req.params.id);
-	// 	const post = this.post.find(p => p.id === id);
-	// 	if (!post) {
-	// 		res.status(404).json({ error: "Post não encontrado" });
-	// 		return;
-	// 	}
-	// 	res.json(post);
-	// };
+	getById = async (req: Request, res: Response) => {
+		const { id } = req.params;
+        try {
+            const post = await this.post_model.findById(id);
+            if (!post) {
+				res.status(404).json({ error: `Post não encontrado com o ID: ${id}` });
+				return;
+            }
+            res.json(post);
+        } catch (error) {
+            res.status(500).json({ error: "Erro ao buscar post por ID." });
+			return;
+        }
+	}
 
-	// searchPosts = (req: Request, res: Response) => {
-	// 	const { query } = req.query;
-	// 	if (!query || typeof query !== "string") {
-	// 		res.status(400).json({ error: "Parâmetro 'query' obrigatório" });
-	// 		return;
-	// 	}
+	search = async (req: Request, res: Response) => {
+        const { titulo, autor, conteudo } = req.query;
+        const query: any = {};
 
-	// 	const resultado = this.post.filter(p =>
-	// 		p.titulo.toLowerCase().includes(query) ||
-	// 		p.conteudo.toLowerCase().includes(query)
-	// 	);
+		if (titulo) {
+			query.titulo = { $regex: titulo as string, $options: "i" };
+		}
 
-	// 	if (resultado.length == 0) {
-	// 		res.status(404).json({ error: `Nenhum post encontrado com este termo: ${query}` });
-	// 		return;
-	// 	}
+		if (autor) {
+			query.autor = { $regex: autor as string, $options: "i" };
+		}
 
-	// 	res.json(resultado);
-	// };
+		if (conteudo) {
+			query.conteudo = { $regex: conteudo as string, $options: "i" };
+		}
 
-	// getPostsByDate = (req: Request, res: Response) => {
-	// 	const { data } = req.params;
-	// 	const regex = /^\d{4}-\d{2}-\d{2}$/;
-	// 	if (!regex.test(data)) {
-	// 		res.status(400).json({ error: "Formato inválido. Use yyyy-mm-dd" });
-	// 		return;
-	// 	}
+        try {
+            const posts = await this.post_model.search(query);
+            res.json(posts);
+        } catch (error) {
+            res.status(500).json({ error: "Erro ao buscar posts por pesquisa." });
+        }
+		return;
+	}
 
-	// 	const resultado = this.post.filter((p) => {
-	// 		const [dia, mes, ano] = p.dataDeCriacao.split("/");
-	// 		return `${ano}-${mes}-${dia}` === data;
-	// 	});
+	getByDate = async (req: Request, res: Response) => {
+        const { data } = req.params;
+        try {
+            const posts = await this.post_model.findByDate(data);
+            res.json(posts);
+        } catch (error) {
+            res.status(500).json({ error: "Erro ao buscar posts por data." });
+        }
+	}
 
-	// 	if (resultado.length === 0) {
-	// 		res.status(404).json({ error: "Nenhum post encontrado para essa data." });
-	// 		return;
-	// 	}
+	create = async (req: Request, res: Response) => {
+		try {
+            const post = await this.post_model.create(req.body);
+            res.status(201).json(post);
+        } catch (error) {
+            res.status(500).json({ error: "Erro ao criar post." });
+        }
+	}
 
-	// 	res.json(resultado);
-	// };
+	update = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        try {
+            const post = await this.post_model.update(id, req.body);
+            if (!post) {
+                res.status(404).json({ error: "Post não encontrado para atualizar." });
+				return;
+            }
+            res.json(post);
+        } catch (error) {
+            res.status(500).json({ error: "Erro ao atualizar post." });
+        }
+	}
 
-	// createPost = (req: Request, res: Response) => {
-	// 	const parsed = postSchema.safeParse(req.body);
-	// 	if (!parsed.success) {
-	// 		res.status(400).json({ error: parsed.error.format() });
-	// 		return;
-	// 	}
-
-	// 	const dataDeCriacao = new Intl.DateTimeFormat("pt-BR").format(new Date());
-
-	// 	const novoPost: Post = {
-	// 		id: currentId++,
-	// 		...parsed.data,
-	// 		dataDeCriacao
-	// 	};
-
-	// 	this.post.push(novoPost);
-	// 	res.status(201).json(novoPost);
-	// };
-
-	// updatePost = (req: Request, res: Response) => {
-	// 	const id = Number(req.params.id);
-	// 	const postIndex = posts.findIndex(p => p.id === id);
-	// 	if (postIndex === -1) {
-	// 		res.status(404).json({ error: `Não encontrado post com o ID: ${id}` });
-	// 		return;
-	// 	}
-
-	// 	const parsed = partialPostSchema.safeParse(req.body);
-	// 	if (!parsed.success) {
-	// 		res.status(400).json({ error: parsed.error.format() });
-	// 		return;
-	// 	}
-
-	// 	const dataDeAtualizacao = new Intl.DateTimeFormat("pt-BR").format(new Date());
-	// 	const antigo = posts[postIndex];
-
-	// 	const atualizado: Post = {
-	// 		...antigo,
-	// 		...parsed.data,
-	// 		dataDeAtualizacao
-	// 	};
-
-	// 	posts[postIndex] = atualizado;
-	// 	res.json(atualizado);
-	// };
-
-	// deletePost = (req: Request, res: Response) => {
-	// 	const id = Number(req.params.id);
-	// 	const index = posts.findIndex(p => p.id === id);
-	// 	if (index === -1) {
-	// 		res.status(404).json({ error: `Não encontrado post com o ID: ${id}` });
-	// 		return;
-	// 	}
-	// 	posts.splice(index, 1);
-	// 	res.status(204).send();
-	// };
+	delete = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        try {
+            const result = await this.post_model.delete(id);
+            if (!result) {
+                res.status(404).json({ error: `Post ${id} não encontrado para deletar.` });
+				return;
+            }
+            res.json({ message: `Post id: ${id} deletado com sucesso.` });
+        } catch (error) {
+            res.status(500).json({ error: "Erro ao deletar post." });
+        }
+	}
 }
 

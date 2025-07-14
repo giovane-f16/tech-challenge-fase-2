@@ -1,12 +1,13 @@
 import { Schema, Model, Document } from "mongoose";
+import { postSchema, partialPostSchema } from "../schemas/Post";
 import Database from "../providers/Database";
 
 export interface Post extends Document {
-    titulo: string;
-    conteudo: string;
-    autor: string;
-    data_criacao: string;
-    data_atualizacao?: Date;
+    titulo:            string;
+    conteudo:          string;
+    autor:             string;
+    data_criacao:      string;
+    data_atualizacao?: string;
 }
 
 export class PostModel {
@@ -18,14 +19,12 @@ export class PostModel {
             conteudo:         { type: String, required: true },
             autor:            { type: String, required: true },
             data_criacao:     { type: String, required: true },
-            data_atualizacao: { type: Date, default: Date.now }
+            data_atualizacao: { type: String }
         });
 
         const instance = database.getInstance();
 
-        // CORREÇÃO: verifica se já existe
 		this.model = instance.model<Post>("Post", schema);
-
         if (instance.models.Post) {
             this.model = instance.model<Post>("Post");
         }
@@ -33,5 +32,55 @@ export class PostModel {
 
     async findAll() {
         return await this.model.find().exec();
+    }
+
+    async search(query: any) {
+        return await this.model.find(query).exec();
+    }
+
+    async findByDate(date: string) {
+        // Assume data_criacao é string no formato 'YYYY-MM-DD'
+        const [year, month, day] = date.split("-");
+        const brDate = `${day}/${month}/${year}`;
+        return await this.model.find({ data_criacao: brDate }).exec();
+    }
+
+    async findById(id: string) {
+        return await this.model.findById(id).exec();
+    }
+
+    async create(data: any) {
+        const result = postSchema.safeParse(data);
+        if (!result.success) {
+            throw new Error(result.error.issues.map(e => e.message).join("; "));
+        }
+
+        const post = new this.model({
+            ...result.data,
+            data_criacao: this.getDataAtual()
+        });
+        return await post.save();
+    }
+
+    async update(id: string, data: any) {
+        const result = partialPostSchema.safeParse(data);
+        if (!result.success) {
+            throw new Error(result.error.issues.map(e => e.message).join("; "));
+        }
+
+        const updateData = {
+            ...result.data,
+            data_atualizacao: this.getDataAtual()
+        };
+
+        return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    }
+
+    async delete(id: string) {
+        return await this.model.findByIdAndDelete(id).exec();
+    }
+
+    getDataAtual(): string {
+        return new Date().toLocaleDateString("pt-BR");
     }
 }
