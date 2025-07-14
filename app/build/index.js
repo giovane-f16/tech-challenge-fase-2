@@ -24,9 +24,101 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // index.ts
 var import_express2 = __toESM(require("express"));
+var import_dotenv2 = __toESM(require("dotenv"));
 
 // src/routes/Posts.ts
 var import_express = require("express");
+
+// src/controllers/Post.ts
+var Post = class {
+  constructor(post_model) {
+    this.getAll = async (req, res) => {
+      const posts = await this.post_model.findAll();
+      res.json(posts);
+    };
+    this.getById = async (req, res) => {
+      const { id } = req.params;
+      try {
+        const post = await this.post_model.findById(id);
+        if (!post) {
+          res.status(404).json({ error: `Post n\xE3o encontrado com o ID: ${id}` });
+          return;
+        }
+        res.json(post);
+      } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar post por ID." });
+        return;
+      }
+    };
+    this.search = async (req, res) => {
+      const { titulo, autor, conteudo } = req.query;
+      const query = {};
+      if (titulo) {
+        query.titulo = { $regex: titulo, $options: "i" };
+      }
+      if (autor) {
+        query.autor = { $regex: autor, $options: "i" };
+      }
+      if (conteudo) {
+        query.conteudo = { $regex: conteudo, $options: "i" };
+      }
+      try {
+        const posts = await this.post_model.search(query);
+        res.json(posts);
+      } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar posts por pesquisa." });
+      }
+      return;
+    };
+    this.getByDate = async (req, res) => {
+      const { data } = req.params;
+      try {
+        const posts = await this.post_model.findByDate(data);
+        res.json(posts);
+      } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar posts por data." });
+      }
+    };
+    this.create = async (req, res) => {
+      try {
+        const post = await this.post_model.create(req.body);
+        res.status(201).json(post);
+      } catch (error) {
+        res.status(500).json({ error: "Erro ao criar post." });
+      }
+    };
+    this.update = async (req, res) => {
+      const { id } = req.params;
+      try {
+        const post = await this.post_model.update(id, req.body);
+        if (!post) {
+          res.status(404).json({ error: "Post n\xE3o encontrado para atualizar." });
+          return;
+        }
+        res.json(post);
+      } catch (error) {
+        res.status(500).json({ error: "Erro ao atualizar post." });
+      }
+    };
+    this.delete = async (req, res) => {
+      const { id } = req.params;
+      try {
+        const result = await this.post_model.delete(id);
+        if (!result) {
+          res.status(404).json({ error: `Post ${id} n\xE3o encontrado para deletar.` });
+          return;
+        }
+        res.json({ message: `Post id: ${id} deletado com sucesso.` });
+      } catch (error) {
+        res.status(500).json({ error: "Erro ao deletar post." });
+      }
+    };
+    this.post_model = post_model;
+  }
+};
+
+// src/models/Post.ts
+var import_mongoose = require("mongoose");
 
 // src/schemas/Post.ts
 var import_zod = require("zod");
@@ -37,112 +129,124 @@ var postSchema = import_zod.z.object({
 });
 var partialPostSchema = postSchema.partial();
 
-// src/controllers/Post.ts
-var posts = [];
-var currentId = 1;
-var getAllPosts = (req, res) => {
-  res.json(posts);
-};
-var getPostById = (req, res) => {
-  const id = Number(req.params.id);
-  const post = posts.find((p) => p.id === id);
-  if (!post) {
-    res.status(404).json({ error: "Post n\xE3o encontrado" });
-    return;
+// src/models/Post.ts
+var PostModel = class {
+  constructor(database) {
+    const schema = new import_mongoose.Schema({
+      titulo: { type: String, required: true },
+      conteudo: { type: String, required: true },
+      autor: { type: String, required: true },
+      data_criacao: { type: String, required: true },
+      data_atualizacao: { type: String }
+    });
+    const instance = database.getInstance();
+    this.model = instance.model("Post", schema);
+    if (instance.models.Post) {
+      this.model = instance.model("Post");
+    }
   }
-  res.json(post);
-};
-var searchPosts = (req, res) => {
-  const { query } = req.query;
-  if (!query || typeof query !== "string") {
-    res.status(400).json({ error: "Par\xE2metro 'query' obrigat\xF3rio" });
-    return;
+  async findAll() {
+    return await this.model.find().exec();
   }
-  const resultado = posts.filter(
-    (p) => p.titulo.toLowerCase().includes(query) || p.conteudo.toLowerCase().includes(query)
-  );
-  res.json(resultado);
-};
-var getPostsByDate = (req, res) => {
-  const { data } = req.params;
-  const regex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!regex.test(data)) {
-    res.status(400).json({ error: "Formato inv\xE1lido. Use yyyy-mm-dd" });
-    return;
+  async search(query) {
+    return await this.model.find(query).exec();
   }
-  const resultado = posts.filter((p) => {
-    const [dia, mes, ano] = p.dataDeCriacao.split("/");
-    return `${ano}-${mes}-${dia}` === data;
-  });
-  if (resultado.length === 0) {
-    res.status(404).json({ error: "Nenhum post encontrado para essa data." });
-    return;
+  async findByDate(date) {
+    const [year, month, day] = date.split("-");
+    const brDate = `${day}/${month}/${year}`;
+    return await this.model.find({ data_criacao: brDate }).exec();
   }
-  res.json(resultado);
-};
-var createPost = (req, res) => {
-  const parsed = postSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.format() });
-    return;
+  async findById(id) {
+    return await this.model.findById(id).exec();
   }
-  const dataDeCriacao = new Intl.DateTimeFormat("pt-BR").format(/* @__PURE__ */ new Date());
-  const novoPost = {
-    id: currentId++,
-    ...parsed.data,
-    dataDeCriacao
-  };
-  posts.push(novoPost);
-  res.status(201).json(novoPost);
-};
-var updatePost = (req, res) => {
-  const id = Number(req.params.id);
-  const postIndex = posts.findIndex((p) => p.id === id);
-  if (postIndex === -1) {
-    res.status(404).json({ error: `N\xE3o encontrado post com o ID: ${id}` });
-    return;
+  async create(data) {
+    const result = postSchema.safeParse(data);
+    if (!result.success) {
+      throw new Error(result.error.issues.map((e) => e.message).join("; "));
+    }
+    const post = new this.model({
+      ...result.data,
+      data_criacao: this.getDataAtual()
+    });
+    return await post.save();
   }
-  const parsed = partialPostSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.format() });
-    return;
+  async update(id, data) {
+    const result = partialPostSchema.safeParse(data);
+    if (!result.success) {
+      throw new Error(result.error.issues.map((e) => e.message).join("; "));
+    }
+    const updateData = {
+      ...result.data,
+      data_atualizacao: this.getDataAtual()
+    };
+    return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
-  const dataDeAtualizacao = new Intl.DateTimeFormat("pt-BR").format(/* @__PURE__ */ new Date());
-  const antigo = posts[postIndex];
-  const atualizado = {
-    ...antigo,
-    ...parsed.data,
-    dataDeAtualizacao
-  };
-  posts[postIndex] = atualizado;
-  res.json(atualizado);
-};
-var deletePost = (req, res) => {
-  const id = Number(req.params.id);
-  const index = posts.findIndex((p) => p.id === id);
-  if (index === -1) {
-    res.status(404).json({ error: `N\xE3o encontrado post com o ID: ${id}` });
-    return;
+  async delete(id) {
+    return await this.model.findByIdAndDelete(id).exec();
   }
-  posts.splice(index, 1);
-  res.status(204).send();
+  getDataAtual() {
+    return (/* @__PURE__ */ new Date()).toLocaleDateString("pt-BR");
+  }
 };
 
+// src/providers/Database.ts
+var import_mongoose2 = __toESM(require("mongoose"));
+var import_dotenv = __toESM(require("dotenv"));
+var _Database = class _Database {
+  constructor() {
+    import_dotenv.default.config();
+  }
+  async conectar() {
+    if (_Database.instance) {
+      return _Database.instance;
+    }
+    await import_mongoose2.default.connect(process.env.MONGODB_URI);
+    console.log("Conectado ao MongoDB Atlas");
+    _Database.instance = import_mongoose2.default;
+    return _Database.instance;
+  }
+  getInstance() {
+    if (!_Database.instance) {
+      throw new Error("Banco n\xE3o conectado ainda!");
+    }
+    return _Database.instance;
+  }
+};
+_Database.instance = null;
+var Database = _Database;
+var Database_default = Database;
+
 // src/routes/Posts.ts
-var router = (0, import_express.Router)();
-router.get("/", getAllPosts);
-router.get("/search", searchPosts);
-router.get("/date/:data", getPostsByDate);
-router.get("/:id", getPostById);
-router.post("/", createPost);
-router.put("/:id", updatePost);
-router.delete("/:id", deletePost);
-var Posts_default = router;
+async function createRouter() {
+  const router = (0, import_express.Router)();
+  const database = new Database_default();
+  await database.conectar();
+  const post_model = new PostModel(database);
+  const controller = new Post(post_model);
+  router.get("/", controller.getAll);
+  router.get("/search", controller.search);
+  router.get("/date/:data", controller.getByDate);
+  router.get("/:id", controller.getById);
+  router.post("/", controller.create);
+  router.put("/:id", controller.update);
+  router.delete("/:id", controller.delete);
+  return router;
+}
+var Posts_default = createRouter;
 
 // index.ts
 var app = (0, import_express2.default)();
 app.use(import_express2.default.json());
-app.use("/posts", Posts_default);
-app.listen(3e3, () => {
-  console.log("Servidor rodando em http://localhost:3000");
+app.get("/", (req, res) => {
+  res.send("API Postech rodando!");
 });
+import_dotenv2.default.config();
+async function init() {
+  const router = await Posts_default();
+  const porta = process.env.PORT || 3e3;
+  app.use("/posts", router);
+  app.listen(porta, () => {
+    console.log(`Servidor rodando em http://localhost:${porta}`);
+  });
+}
+init();
