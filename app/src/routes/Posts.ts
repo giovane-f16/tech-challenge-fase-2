@@ -1,22 +1,24 @@
 import { Router } from "express";
-import {
-	getAllPosts,
-	getPostById,
-	searchPosts,
-	getPostsByDate,
-	createPost,
-	updatePost,
-	deletePost
-} from "../controllers/Post";
+import { Post as PostController } from "../controllers/Post";
+import { PostModel } from "../models/Post";
+import Database from "../providers/Database";
 
-const router = Router();
+export async function createRouter() {
+	const router     = Router();
+	const database   = new Database;
+	await database.conectar();
 
-router.get("/", getAllPosts);
-router.get("/search", searchPosts);
-router.get("/date/:data", getPostsByDate);
-router.get("/:id", getPostById);
-router.post("/", createPost);
-router.put("/:id", updatePost);
-router.delete("/:id", deletePost);
+	const post_model = new PostModel(database);
+	const controller = new PostController(post_model);
 
-export default router;
+	router.get("/", 		  controller.getAllPosts);
+	// router.get("/search", 	  controller.searchPosts);
+	// router.get("/data/:data", controller.getPostsByDate);
+	// router.get("/:id", 		  controller.getPostById);
+	// router.post("/", 		  controller.createPost);
+	// router.put("/:id", 		  controller.updatePost);
+	// router.delete("/:id", 	  controller.deletePost);
+	return router;
+}
+
+export default createRouter;
