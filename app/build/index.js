@@ -216,6 +216,26 @@ _Database.instance = null;
 var Database = _Database;
 var Database_default = Database;
 
+// src/middlewares/auth.ts
+var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
+var SECRET = process.env.JWT_SECRET || null;
+function authenticateJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    import_jsonwebtoken.default.verify(token, SECRET, (err, decoded) => {
+      if (err) {
+        res.status(403).json({ error: "Token inv\xE1lido ou expirado." });
+        return;
+      }
+      req.user = decoded;
+      next();
+    });
+  } else {
+    res.status(401).json({ error: "Token de autentica\xE7\xE3o n\xE3o fornecido." });
+  }
+}
+
 // src/routes/Posts.ts
 async function createRouter() {
   const router = (0, import_express.Router)();
@@ -227,9 +247,9 @@ async function createRouter() {
   router.get("/search", controller.search);
   router.get("/date/:data", controller.getByDate);
   router.get("/:id", controller.getById);
-  router.post("/", controller.create);
-  router.put("/:id", controller.update);
-  router.delete("/:id", controller.delete);
+  router.post("/", authenticateJWT, controller.create);
+  router.put("/:id", authenticateJWT, controller.update);
+  router.delete("/:id", authenticateJWT, controller.delete);
   return router;
 }
 var Posts_default = createRouter;

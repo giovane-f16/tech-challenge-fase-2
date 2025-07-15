@@ -2,6 +2,7 @@ import { Router } from "express";
 import { Post as PostController } from "../controllers/Post";
 import { PostModel } from "../models/Post";
 import Database from "../providers/Database";
+import { authenticateJWT } from "../middlewares/auth";
 
 export async function createRouter() {
 	const router     = Router();
@@ -15,9 +16,9 @@ export async function createRouter() {
 	router.get("/search", 	  controller.search);
 	router.get("/date/:data", controller.getByDate);
 	router.get("/:id", 		  controller.getById);
-	router.post("/", 		  controller.create);
-	router.put("/:id", 		  controller.update);
-	router.delete("/:id", 	  controller.delete);
+	router.post("/", 		  authenticateJWT, controller.create);
+	router.put("/:id", 		  authenticateJWT, controller.update);
+	router.delete("/:id", 	  authenticateJWT, controller.delete);
 	return router;
 }
 
