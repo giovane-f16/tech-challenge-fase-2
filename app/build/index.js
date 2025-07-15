@@ -24,7 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // index.ts
 var import_express2 = __toESM(require("express"));
-var import_dotenv2 = __toESM(require("dotenv"));
+var import_dotenv3 = __toESM(require("dotenv"));
 
 // src/routes/Posts.ts
 var import_express = require("express");
@@ -218,9 +218,15 @@ var Database_default = Database;
 
 // src/middlewares/auth.ts
 var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
-var SECRET = process.env.JWT_SECRET || null;
+var import_dotenv2 = __toESM(require("dotenv"));
+import_dotenv2.default.config();
+var SECRET = process.env.JWT_SECRET;
 function authenticateJWT(req, res, next) {
   const authHeader = req.headers.authorization;
+  if (!SECRET) {
+    res.status(500).json({ error: "JWT_SECRET n\xE3o configurado no ambiente." });
+    return;
+  }
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.split(" ")[1];
     import_jsonwebtoken.default.verify(token, SECRET, (err, decoded) => {
@@ -228,7 +234,6 @@ function authenticateJWT(req, res, next) {
         res.status(403).json({ error: "Token inv\xE1lido ou expirado." });
         return;
       }
-      req.user = decoded;
       next();
     });
   } else {
@@ -260,7 +265,7 @@ app.use(import_express2.default.json());
 app.get("/", (req, res) => {
   res.send("API Postech rodando!");
 });
-import_dotenv2.default.config();
+import_dotenv3.default.config();
 async function init() {
   const router = await Posts_default();
   const porta = process.env.PORT || 3e3;
