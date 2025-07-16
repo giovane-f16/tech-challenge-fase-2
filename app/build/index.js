@@ -24,7 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // index.ts
 var import_express2 = __toESM(require("express"));
-var import_dotenv3 = __toESM(require("dotenv"));
+var import_dotenv4 = __toESM(require("dotenv"));
 
 // src/routes/Posts.ts
 var import_express = require("express");
@@ -262,18 +262,52 @@ async function createRouter() {
 var Posts_default = createRouter;
 
 // index.ts
+var import_swagger_ui_express = __toESM(require("swagger-ui-express"));
+
+// src/config/swagger.ts
+var import_swagger_jsdoc = __toESM(require("swagger-jsdoc"));
+var import_dotenv3 = __toESM(require("dotenv"));
+import_dotenv3.default.config();
+var porta = process.env.PORT || 3e3;
+var options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "API PosTech fase 2",
+      version: "1.0.0",
+      description: "Documenta\xE7\xE3o da API PosTech fase 2"
+    }
+  },
+  apis: ["./src/routes/*.ts"],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT"
+      }
+    }
+  },
+  security: [
+    {
+      bearerAuth: []
+    }
+  ]
+};
+var swaggerSpec = (0, import_swagger_jsdoc.default)(options);
+var swagger_default = swaggerSpec;
+
+// index.ts
 var app = (0, import_express2.default)();
 app.use(import_express2.default.json());
-app.get("/", (req, res) => {
-  res.send("API Postech rodando!");
-});
-import_dotenv3.default.config();
+import_dotenv4.default.config();
 async function init() {
   const router = await Posts_default();
-  const porta = process.env.PORT || 3e3;
+  const porta2 = process.env.PORT || 3e3;
   app.use("/posts", router);
-  app.listen(porta, () => {
-    console.log(`Servidor rodando em http://localhost:${porta}`);
+  app.use("/", import_swagger_ui_express.default.serve, import_swagger_ui_express.default.setup(swagger_default));
+  app.listen(porta2, () => {
+    console.log(`Servidor rodando em http://localhost:${porta2}`);
   });
 }
 init();
