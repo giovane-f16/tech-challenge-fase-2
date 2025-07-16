@@ -138,6 +138,8 @@ var PostModel = class {
       autor: { type: String, required: true },
       data_criacao: { type: String, required: true },
       data_atualizacao: { type: String }
+    }, {
+      versionKey: false
     });
     const instance = database.getInstance();
     this.model = instance.model("Post", schema);

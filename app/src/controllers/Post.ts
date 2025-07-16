@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { PostModel } from "../models/Post";
-import { postSchema, partialPostSchema } from "../schemas/Post";
 
 export class Post {
 	private post_model;
@@ -101,4 +100,3 @@ export class Post {
         }
 	}
 }
-

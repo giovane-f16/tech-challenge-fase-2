@@ -20,6 +20,8 @@ export class PostModel {
             autor:            { type: String, required: true },
             data_criacao:     { type: String, required: true },
             data_atualizacao: { type: String }
+        }, {
+            versionKey: false
         });
 
         const instance = database.getInstance();
