@@ -3,10 +3,10 @@ import { postSchema, partialPostSchema } from "../schemas/Post";
 import Database from "../providers/Database";
 
 export interface Post extends Document {
-    titulo:            string;
-    conteudo:          string;
-    autor:             string;
-    data_criacao:      string;
+    titulo: string;
+    conteudo: string;
+    autor: string;
+    data_criacao: string;
     data_atualizacao?: string;
 }
 
@@ -15,10 +15,10 @@ export class PostModel {
 
     constructor(database: Database) {
         const schema = new Schema<Post>({
-            titulo:           { type: String, required: true },
-            conteudo:         { type: String, required: true },
-            autor:            { type: String, required: true },
-            data_criacao:     { type: String, required: true },
+            titulo: { type: String, required: true },
+            conteudo: { type: String, required: true },
+            autor: { type: String, required: true },
+            data_criacao: { type: String, required: true },
             data_atualizacao: { type: String }
         }, {
             versionKey: false
@@ -26,7 +26,7 @@ export class PostModel {
 
         const instance = database.getInstance();
 
-		this.model = instance.model<Post>("Post", schema);
+        this.model = instance.model<Post>("Post", schema);
         if (instance.models.Post) {
             this.model = instance.model<Post>("Post");
         }
