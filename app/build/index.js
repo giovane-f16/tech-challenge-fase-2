@@ -24,7 +24,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // index.ts
 var import_express2 = __toESM(require("express"));
-var import_dotenv4 = __toESM(require("dotenv"));
+var import_dotenv3 = __toESM(require("dotenv"));
 
 // src/routes/Posts.ts
 var import_express = require("express");
@@ -265,49 +265,24 @@ var Posts_default = createRouter;
 var import_swagger_ui_express = __toESM(require("swagger-ui-express"));
 
 // src/config/swagger.ts
-var import_swagger_jsdoc = __toESM(require("swagger-jsdoc"));
-var import_dotenv3 = __toESM(require("dotenv"));
-import_dotenv3.default.config();
-var porta = process.env.PORT || 3e3;
-var options = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "API PosTech fase 2",
-      version: "1.0.0",
-      description: "Documenta\xE7\xE3o da API PosTech fase 2"
-    }
-  },
-  apis: ["./src/routes/*.ts"],
-  components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT"
-      }
-    }
-  },
-  security: [
-    {
-      bearerAuth: []
-    }
-  ]
-};
-var swaggerSpec = (0, import_swagger_jsdoc.default)(options);
-var swagger_default = swaggerSpec;
+var import_fs = __toESM(require("fs"));
+var import_js_yaml = __toESM(require("js-yaml"));
+var import_path = __toESM(require("path"));
+var swaggerPath = import_path.default.join(__dirname, "./swagger.yaml");
+var swaggerDocument = import_js_yaml.default.load(import_fs.default.readFileSync(swaggerPath, "utf8"));
+var swagger_default = swaggerDocument;
 
 // index.ts
 var app = (0, import_express2.default)();
 app.use(import_express2.default.json());
-import_dotenv4.default.config();
+import_dotenv3.default.config();
 async function init() {
   const router = await Posts_default();
-  const porta2 = process.env.PORT || 3e3;
+  const porta = process.env.PORT || 3e3;
   app.use("/posts", router);
   app.use("/", import_swagger_ui_express.default.serve, import_swagger_ui_express.default.setup(swagger_default));
-  app.listen(porta2, () => {
-    console.log(`Servidor rodando em http://localhost:${porta2}`);
+  app.listen(porta, () => {
+    console.log(`Servidor rodando em http://localhost:${porta}`);
   });
 }
 init();
