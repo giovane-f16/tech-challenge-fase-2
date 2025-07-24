@@ -20,3 +20,6 @@ jobs:
 
       - name: Push da imagem
         run: docker push ${{ secrets.DOCKER_USERNAME }}/techchallenge:latest
+
+      - name: Acionar deploy no Render
+        run: curl -X GET "${{ secrets.RENDER_DEPLOY_HOOK }}"
