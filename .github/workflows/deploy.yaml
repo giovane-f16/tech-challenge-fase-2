@@ -1,4 +1,4 @@
-name: CI/CD - Build e Push para o Docker Hub
+name: CI/CD - Build e Push para o Docker Hub & Render
 
 on:
   push:
