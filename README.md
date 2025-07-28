@@ -19,17 +19,17 @@ O projeto utiliza o [MongoDB Atlas](https://www.mongodb.com/products/platform/at
 
 ## Requisitos
 1. Docker e Docker compose
-```
-https://www.docker.com/
-```
+
+    https://www.docker.com/
+
 2. Instância no MongoDB Atlas
-```
-https://www.mongodb.com/products/platform/atlas-database
-```
+
+    https://www.mongodb.com/products/platform/atlas-database
+
 3. Token JWT
-```
-https://www.jwt.io/
-```
+
+    https://www.jwt.io/
+
 
 ## Como usar
 1. Clone o projeto
