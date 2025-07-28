@@ -15,7 +15,9 @@ O projeto utiliza o SaaS [MongoDB Atlas](https://www.mongodb.com/products/platfo
 ## Guia de uso
 1. Clone o projeto
 
-`git clone https://github.com/giovane-f16/tech-challenge-fase-2.git`
+```bash
+git clone https://github.com/giovane-f16/tech-challenge-fase-2.git
+```
 
 2. Configure o arquivo **.env** utilizando como base o **[.env-example](./app/.env.example)**.
 
@@ -23,4 +25,7 @@ O projeto utiliza o SaaS [MongoDB Atlas](https://www.mongodb.com/products/platfo
 
 3. Suba o container
 
-`docker compose up --build -d`
+```bash
+docker compose up --build -d
+```
+A aplicação estará disponível no [http://localhost:3000/](http://localhost:3000/).
