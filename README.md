@@ -1,10 +1,10 @@
 # Tech Challenge Fase 2
 
 API RESTful desenvolvida com **Node.js** e **TypeScript**, com os seguintes recursos:
-- Criar de Posts
-- Listar de Posts
-- Editar de Posts
-- Excluir de Posts
+- Criar Posts
+- Listar Posts
+- Editar Posts
+- Excluir Posts
 
 Para visualização completa, o projeto está integrado com o [Swagger](https://swagger.io/) a fim de facilitar a visualização e testes dos endpoints.
 
