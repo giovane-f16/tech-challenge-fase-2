@@ -1,18 +1,37 @@
 # Tech Challenge Fase 2
 
-API Feita em NodeJS + Typescript com os recursos de:
-- Criação de Posts
-- Listagem de Posts
-- Edição de Posts
-- Exclusão de Posts
+API RESTful desenvolvida com **Node.js** e **TypeScript**, com os seguintes recursos:
+- Criar de Posts
+- Listar de Posts
+- Editar de Posts
+- Excluir de Posts
 
-Para visualização completa, o projeto está integrado com o [Swagger](https://swagger.io/) a fim de facilitar a compreensão.
+Para visualização completa, o projeto está integrado com o [Swagger](https://swagger.io/) a fim de facilitar a visualização e testes dos endpoints.
+
+## Link de produção
+
+A aplicação está disponível em:
+[https://tech-challenge-fase-2-54i9.onrender.com/](https://tech-challenge-fase-2-54i9.onrender.com/)
 
 ## Persistência de dados
-O projeto utiliza o SaaS [MongoDB Atlas](https://www.mongodb.com/products/platform/atlas-database) para persistência dos dados.
+O projeto utiliza o [MongoDB Atlas](https://www.mongodb.com/products/platform/atlas-database) para armazenar os dados.
 
 
-## Guia de uso
+## Requisitos
+1. Docker e Docker compose
+```
+https://www.docker.com/
+```
+2. Instância no MongoDB Atlas
+```
+https://www.mongodb.com/products/platform/atlas-database
+```
+3. Token JWT
+```
+https://www.jwt.io/
+```
+
+## Como usar
 1. Clone o projeto
 
 ```bash
@@ -21,7 +40,7 @@ git clone https://github.com/giovane-f16/tech-challenge-fase-2.git
 
 2. Configure o arquivo **.env** utilizando como base o **[.env-example](./app/.env.example)**.
 
-É necessário criar um banco no mongo DB Atlas e um token JWT.
+    É necessário criar um banco no mongo DB Atlas e um token JWT.
 
 3. Suba o container
 
