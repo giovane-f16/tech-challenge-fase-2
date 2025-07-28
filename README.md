@@ -20,15 +20,15 @@ O projeto utiliza o [MongoDB Atlas](https://www.mongodb.com/products/platform/at
 ## Requisitos
 1. Docker e Docker compose
 
-    https://www.docker.com/
+> https://www.docker.com/
 
 2. Instância no MongoDB Atlas
 
-    https://www.mongodb.com/products/platform/atlas-database
+> https://www.mongodb.com/products/platform/atlas-database
 
 3. Token JWT
 
-    https://www.jwt.io/
+> https://www.jwt.io/
 
 
 ## Como usar
@@ -39,8 +39,6 @@ git clone https://github.com/giovane-f16/tech-challenge-fase-2.git
 ```
 
 2. Configure o arquivo **.env** utilizando como base o **[.env-example](./app/.env.example)**.
-
-    É necessário criar um banco no mongo DB Atlas e um token JWT.
 
 3. Suba o container
 
