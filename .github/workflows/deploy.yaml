@@ -22,8 +22,11 @@ jobs:
         run: docker push ${{ secrets.DOCKER_USERNAME }}/techchallenge:latest
 
       - name: Acionar deploy no Render
-        run: |
-          curl -i -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache":true}'
+        run: curl --request POST \
+            --url https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys \
+            --header 'accept: application/json' \
+            --header 'authorization: Bearer ${{ secrets.RENDER_API_KEY }}' \
+            --header 'content-type: application/json' \
+            --data ' {
+              "clearCache": "clear"
+            }'
