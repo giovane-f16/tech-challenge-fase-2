@@ -64,7 +64,7 @@ paths:
           schema:
             type: string
           required: false
-          description: Autores para busca
+          description: Autor para busca
       responses:
         200:
           description: Lista filtrada de posts
