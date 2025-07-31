@@ -2,7 +2,7 @@ import { Router } from "express";
 import { Post as PostController } from "../controllers/Post";
 import { PostModel } from "../models/Post";
 import Database from "../providers/Database";
-import { authenticateJWT } from "../middlewares/auth";
+import { authenticateJWT } from "../middlewares/Auth";
 
 export async function createRouter() {
     const router = Router();

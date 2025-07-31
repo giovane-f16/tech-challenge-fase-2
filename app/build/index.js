@@ -218,7 +218,7 @@ _Database.instance = null;
 var Database = _Database;
 var Database_default = Database;
 
-// src/middlewares/auth.ts
+// src/middlewares/Auth.ts
 var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
 var import_dotenv2 = __toESM(require("dotenv"));
 import_dotenv2.default.config();
@@ -264,13 +264,13 @@ var Posts_default = createRouter;
 // index.ts
 var import_swagger_ui_express = __toESM(require("swagger-ui-express"));
 
-// src/config/swagger.ts
+// src/config/Swagger.ts
 var import_fs = __toESM(require("fs"));
 var import_js_yaml = __toESM(require("js-yaml"));
 var import_path = __toESM(require("path"));
 var swaggerPath = import_path.default.join(__dirname, "./swagger.yaml");
 var swaggerDocument = import_js_yaml.default.load(import_fs.default.readFileSync(swaggerPath, "utf8"));
-var swagger_default = swaggerDocument;
+var Swagger_default = swaggerDocument;
 
 // index.ts
 var app = (0, import_express2.default)();
@@ -280,7 +280,7 @@ async function init() {
   const router = await Posts_default();
   const porta = process.env.PORT || 3e3;
   app.use("/posts", router);
-  app.use("/", import_swagger_ui_express.default.serve, import_swagger_ui_express.default.setup(swagger_default));
+  app.use("/", import_swagger_ui_express.default.serve, import_swagger_ui_express.default.setup(Swagger_default));
   app.listen(porta, () => {
     console.log(`Servidor rodando em http://localhost:${porta}`);
   });

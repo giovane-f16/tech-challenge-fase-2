@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import createRouter from "./src/routes/Posts";
 import swaggerUi, { JsonObject } from "swagger-ui-express";
-import swaggerDocument from "./src/config/swagger";
+import swaggerDocument from "./src/config/Swagger";
 
 const app = express();
 app.use(express.json());
