@@ -148,7 +148,15 @@ var PostModel = class {
     }
   }
   async findAll() {
-    return await this.model.find().exec();
+    const posts = await this.model.find().exec();
+    const parseDate = (dateString) => {
+      const [day, month, year] = dateString.split("/");
+      return /* @__PURE__ */ new Date(`${year}-${month}-${day}`);
+    };
+    const sortedPosts = posts.sort((a, b) => {
+      return parseDate(b.data_criacao).getTime() - parseDate(a.data_criacao).getTime();
+    });
+    return sortedPosts;
   }
   async search(query) {
     return await this.model.find(query).exec();
