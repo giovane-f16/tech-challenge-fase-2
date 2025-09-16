@@ -125,7 +125,8 @@ var import_zod = require("zod");
 var postSchema = import_zod.z.object({
   titulo: import_zod.z.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
   conteudo: import_zod.z.string().min(1, "Conte\xFAdo \xE9 obrigat\xF3rio"),
-  autor: import_zod.z.string().min(1, "Autor \xE9 obrigat\xF3rio")
+  autor: import_zod.z.string().min(1, "Autor \xE9 obrigat\xF3rio"),
+  thumbnail: import_zod.z.string().optional()
 });
 var partialPostSchema = postSchema.partial();
 
@@ -137,7 +138,8 @@ var PostModel = class {
       conteudo: { type: String, required: true },
       autor: { type: String, required: true },
       data_criacao: { type: String, required: true },
-      data_atualizacao: { type: String }
+      data_atualizacao: { type: String },
+      thumbnail: { type: String }
     }, {
       versionKey: false
     });

@@ -8,6 +8,7 @@ export interface Post extends Document {
     autor: string;
     data_criacao: string;
     data_atualizacao?: string;
+    thumbnail?: string
 }
 
 export class PostModel {
@@ -19,7 +20,8 @@ export class PostModel {
             conteudo: { type: String, required: true },
             autor: { type: String, required: true },
             data_criacao: { type: String, required: true },
-            data_atualizacao: { type: String }
+            data_atualizacao: { type: String },
+            thumbnail: { type: String}
         }, {
             versionKey: false
         });
