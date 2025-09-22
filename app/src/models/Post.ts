@@ -49,8 +49,14 @@ export class PostModel {
         return sortedPosts;
     }
 
-    async search(query: any) {
-        return await this.model.find(query).exec();
+    async search(search: string) {
+        return await this.model.find({
+            $or: [
+                { titulo: { $regex: search, $options: "i" } },
+                { conteudo: { $regex: search, $options: "i" } },
+                { autor: { $regex: search, $options: "i" } }
+            ]
+        }).exec();
     }
 
     async findByDate(date: string) {
