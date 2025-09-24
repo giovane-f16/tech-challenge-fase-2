@@ -51,19 +51,9 @@ var Post = class {
       }
     };
     this.search = async (req, res) => {
-      const { titulo, autor, conteudo } = req.query;
-      const query = {};
-      if (titulo) {
-        query.titulo = { $regex: titulo, $options: "i" };
-      }
-      if (autor) {
-        query.autor = { $regex: autor, $options: "i" };
-      }
-      if (conteudo) {
-        query.conteudo = { $regex: conteudo, $options: "i" };
-      }
+      const searchTerm = req.query.titulo || req.query.autor || req.query.conteudo;
       try {
-        const posts = await this.post_model.search(query);
+        const posts = await this.post_model.search(searchTerm);
         res.json(posts);
       } catch (error) {
         res.status(500).json({ error: "Erro ao buscar posts por pesquisa." });
