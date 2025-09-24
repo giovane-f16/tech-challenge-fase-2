@@ -6,8 +6,8 @@ export interface Post extends Document {
     titulo: string;
     conteudo: string;
     autor: string;
-    data_criacao: string;
-    data_atualizacao?: string;
+    data_criacao: Date;
+    data_atualizacao?: Date;
     thumbnail?: string
 }
 
@@ -19,8 +19,8 @@ export class PostModel {
             titulo: { type: String, required: true },
             conteudo: { type: String, required: true },
             autor: { type: String, required: true },
-            data_criacao: { type: String, required: true },
-            data_atualizacao: { type: String },
+            data_criacao: { type: Date, required: true },
+            data_atualizacao: { type: Date },
             thumbnail: { type: String}
         }, {
             versionKey: false
@@ -35,18 +35,7 @@ export class PostModel {
     }
 
     async findAll() {
-        const posts = await this.model.find().exec();
-
-        const parseDate = (dateString: string) => {
-            const [day, month, year] = dateString.split('/');
-            return new Date(`${year}-${month}-${day}`);
-        };
-
-        const sortedPosts = posts.sort((a, b) => {
-            return parseDate(b.data_criacao).getTime() - parseDate(a.data_criacao).getTime();
-        });
-
-        return sortedPosts;
+        return await this.model.find().sort({ data_criacao: -1 }).lean().exec();
     }
 
     async search(search: string) {
@@ -60,10 +49,15 @@ export class PostModel {
     }
 
     async findByDate(date: string) {
-        // Assume data_criacao é string no formato 'YYYY-MM-DD'
-        const [year, month, day] = date.split("-");
-        const brDate = `${day}/${month}/${year}`;
-        return await this.model.find({ data_criacao: brDate }).exec();
+        const start = new Date(date);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(date);
+        end.setHours(23, 59, 59, 999);
+
+        return await this.model.find({
+            data_criacao: { $gte: start, $lte: end }
+        }).exec();
     }
 
     async findById(id: string) {
@@ -78,7 +72,7 @@ export class PostModel {
 
         const post = new this.model({
             ...result.data,
-            data_criacao: this.getDataAtual()
+            data_criacao: new Date()
         });
         return await post.save();
     }
@@ -91,7 +85,7 @@ export class PostModel {
 
         const updateData = {
             ...result.data,
-            data_atualizacao: this.getDataAtual()
+            data_atualizacao: new Date()
         };
 
         return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
@@ -99,9 +93,5 @@ export class PostModel {
 
     async delete(id: string) {
         return await this.model.findByIdAndDelete(id).exec();
-    }
-
-    getDataAtual(): string {
-        return new Date().toLocaleDateString("pt-BR");
     }
 }
