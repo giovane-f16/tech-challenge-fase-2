@@ -137,8 +137,8 @@ var PostModel = class {
       titulo: { type: String, required: true },
       conteudo: { type: String, required: true },
       autor: { type: String, required: true },
-      data_criacao: { type: String, required: true },
-      data_atualizacao: { type: String },
+      data_criacao: { type: Date, required: true },
+      data_atualizacao: { type: Date },
       thumbnail: { type: String }
     }, {
       versionKey: false
@@ -150,26 +150,28 @@ var PostModel = class {
     }
   }
   async findAll() {
-    const posts = await this.model.find().exec();
-    const parseDate = (dateString) => {
-      const [day, month, year] = dateString.split("/");
-      return /* @__PURE__ */ new Date(`${year}-${month}-${day}`);
-    };
-    const sortedPosts = posts.sort((a, b) => {
-      return parseDate(b.data_criacao).getTime() - parseDate(a.data_criacao).getTime();
-    });
-    return sortedPosts;
+    return await this.model.find().sort({ data_criacao: -1 }).lean().exec();
   }
-  async search(query) {
-    return await this.model.find(query).exec();
+  async search(search) {
+    return await this.model.find({
+      $or: [
+        { titulo: { $regex: search, $options: "i" } },
+        { conteudo: { $regex: search, $options: "i" } },
+        { autor: { $regex: search, $options: "i" } }
+      ]
+    }).exec();
   }
   async findByDate(date) {
-    const [year, month, day] = date.split("-");
-    const brDate = `${day}/${month}/${year}`;
-    return await this.model.find({ data_criacao: brDate }).exec();
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+    return await this.model.find({
+      data_criacao: { $gte: start, $lte: end }
+    }).exec();
   }
   async findById(id) {
-    return await this.model.findById(id).exec();
+    return await this.model.findById(id).lean().exec();
   }
   async create(data) {
     const result = postSchema.safeParse(data);
@@ -178,7 +180,7 @@ var PostModel = class {
     }
     const post = new this.model({
       ...result.data,
-      data_criacao: this.getDataAtual()
+      data_criacao: /* @__PURE__ */ new Date()
     });
     return await post.save();
   }
@@ -189,15 +191,12 @@ var PostModel = class {
     }
     const updateData = {
       ...result.data,
-      data_atualizacao: this.getDataAtual()
+      data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
     };
     return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
   async delete(id) {
     return await this.model.findByIdAndDelete(id).exec();
-  }
-  getDataAtual() {
-    return (/* @__PURE__ */ new Date()).toLocaleDateString("pt-BR");
   }
 };
 

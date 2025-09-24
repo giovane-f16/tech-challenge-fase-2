@@ -30,6 +30,7 @@ paths:
                 - titulo
                 - conteudo
                 - autor
+                - thumbnail
               properties:
                 titulo:
                   type: string
@@ -37,6 +38,9 @@ paths:
                   type: string
                 autor:
                   type: string
+                thumbnail:
+                  type: string
+                  format: uri
       responses:
         201:
           description: Post criado com sucesso
@@ -127,6 +131,8 @@ paths:
                 conteudo:
                   type: string
                 autor:
+                  type: string
+                thumbnail:
                   type: string
       responses:
         200:

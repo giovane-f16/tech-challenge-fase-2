@@ -61,7 +61,7 @@ export class PostModel {
     }
 
     async findById(id: string) {
-        return await this.model.findById(id).exec();
+        return await this.model.findById(id).lean().exec();
     }
 
     async create(data: any) {
@@ -85,7 +85,7 @@ export class PostModel {
 
         const updateData = {
             ...result.data,
-            data_atualizacao: new Date()
+            data_atualizacao: new Date().toISOString()
         };
 
         return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
