@@ -16,6 +16,7 @@ export async function createRouter() {
     router.get("/search", controller.search);
     router.get("/date/:data", controller.getByDate);
     router.get("/:id", controller.getById);
+    router.get("/:id/thumbnail", controller.getThumbnail);
     router.post("/", authenticateJWT, controller.create);
     router.put("/:id", authenticateJWT, controller.update);
     router.delete("/:id", authenticateJWT, controller.delete);

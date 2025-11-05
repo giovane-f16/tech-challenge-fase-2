@@ -86,4 +86,21 @@ export class Post {
             res.status(500).json({ error: "Erro ao deletar post." });
         }
     }
+
+    getThumbnail = async (req: Request, res: Response) => {
+        const { id } = req.params;
+        try {
+            const upload = await this.post_model.getThumbnail(id);
+            if (!upload) {
+                res.status(404).json({ error: "Thumbnail não encontrada para este post." });
+                return;
+            }
+
+            res.set('Content-Type', upload.contentType);
+            res.set('Content-Length', upload.size.toString());
+            res.send(upload.data);
+        } catch (error) {
+            res.status(500).json({ error: "Erro ao buscar thumbnail." });
+        }
+    }
 }

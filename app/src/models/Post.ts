@@ -1,6 +1,7 @@
-import { Schema, Model, Document } from "mongoose";
+import { Schema, Model, Document, Types } from "mongoose";
 import { postSchema, partialPostSchema } from "../schemas/Post";
 import Database from "../providers/Database";
+import { UploadModel } from "./Upload";
 
 export interface Post extends Document {
     titulo: string;
@@ -8,29 +9,35 @@ export interface Post extends Document {
     autor: string;
     data_criacao: Date;
     data_atualizacao?: Date;
-    thumbnail?: string
+    thumbnail?: string;
+    thumbnail_id?: Types.ObjectId;
 }
 
 export class PostModel {
     private model: Model<Post>;
+    private uploadModel: UploadModel;
 
     constructor(database: Database) {
+        this.uploadModel = new UploadModel(database);
+
         const schema = new Schema<Post>({
             titulo: { type: String, required: true },
             conteudo: { type: String, required: true },
             autor: { type: String, required: true },
             data_criacao: { type: Date, required: true },
             data_atualizacao: { type: Date },
-            thumbnail: { type: String}
+            thumbnail: { type: String },
+            thumbnail_id: { type: Schema.Types.ObjectId, ref: 'Upload' }
         }, {
             versionKey: false
         });
 
         const instance = database.getInstance();
 
-        this.model = instance.model<Post>("Post", schema);
         if (instance.models.Post) {
             this.model = instance.model<Post>("Post");
+        } else {
+            this.model = instance.model<Post>("Post", schema);
         }
     }
 
@@ -70,9 +77,23 @@ export class PostModel {
             throw new Error(result.error.issues.map(e => e.message).join("; "));
         }
 
+        let thumbnailId;
+        let thumbnailToSave = result.data.thumbnail;
+
+        if (result.data.thumbnail && result.data.thumbnail.trim() !== "") {
+            if (result.data.thumbnail.startsWith('data:image/')) {
+                thumbnailId = await this.processarThumbnail(result.data.thumbnail);
+                thumbnailToSave = undefined;
+            }
+        }
+
         const post = new this.model({
-            ...result.data,
-            data_criacao: new Date()
+            titulo: result.data.titulo,
+            conteudo: result.data.conteudo,
+            autor: result.data.autor,
+            data_criacao: new Date(),
+            thumbnail: thumbnailToSave,
+            thumbnail_id: thumbnailId
         });
         return await post.save();
     }
@@ -83,15 +104,69 @@ export class PostModel {
             throw new Error(result.error.issues.map(e => e.message).join("; "));
         }
 
-        const updateData = {
+        const oldPost = await this.model.findById(id);
+
+        let thumbnailId;
+        const updateData: any = {
             ...result.data,
-            data_atualizacao: new Date().toISOString()
+            data_atualizacao: new Date()
         };
+
+        if (result.data.thumbnail && result.data.thumbnail.trim() !== "") {
+            if (result.data.thumbnail.startsWith('data:image/')) {
+                thumbnailId = await this.processarThumbnail(result.data.thumbnail);
+
+                if (oldPost?.thumbnail_id) {
+                    await this.uploadModel.delete(oldPost.thumbnail_id.toString());
+                }
+
+                updateData.thumbnail = undefined;
+                updateData.thumbnail_id = thumbnailId;
+            }
+        }
 
         return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
     }
 
     async delete(id: string) {
+        const post = await this.model.findById(id);
+
+        if (post?.thumbnail_id) {
+            await this.uploadModel.delete(post.thumbnail_id.toString());
+        }
+
         return await this.model.findByIdAndDelete(id).exec();
+    }
+
+    async getThumbnail(id: string) {
+        const post = await this.model.findById(id);
+        if (!post || !post.thumbnail_id) {
+            return null;
+        }
+        return await this.uploadModel.findById(post.thumbnail_id.toString());
+    }
+
+    private async processarThumbnail(thumbnail: string): Promise<Types.ObjectId | undefined> {
+        if (!thumbnail || thumbnail.trim() === "") {
+            return undefined;
+        }
+
+        try {
+            if (!thumbnail.startsWith('data:image/')) {
+                throw new Error('Thumbnail deve ser uma imagem em formato base64');
+            }
+
+            const base64Data = thumbnail.replace(/^data:image\/\w+;base64,/, '');
+            const imageBuffer = Buffer.from(base64Data, 'base64');
+            const contentType = thumbnail.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg';
+            const filename = `thumbnail_${Date.now()}.${contentType.split('/')[1]}`;
+
+            const upload = await this.uploadModel.create(imageBuffer, contentType, filename);
+
+            return upload._id as Types.ObjectId;
+        } catch (error) {
+            console.error('Erro ao processar thumbnail:', error);
+            throw new Error('Falha ao processar a imagem thumbnail');
+        }
     }
 }
