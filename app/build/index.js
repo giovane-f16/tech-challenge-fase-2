@@ -131,8 +131,7 @@ var postSchema = import_zod.z.object({
   titulo: import_zod.z.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
   conteudo: import_zod.z.string().min(1, "Conte\xFAdo \xE9 obrigat\xF3rio"),
   autor: import_zod.z.string().min(1, "Autor \xE9 obrigat\xF3rio"),
-  thumbnail: import_zod.z.string().optional(),
-  thumbnail_buffer: import_zod.z.instanceof(Buffer).optional()
+  thumbnail: import_zod.z.string().optional()
 });
 var partialPostSchema = postSchema.partial();
 
@@ -286,12 +285,9 @@ var PostModel = class {
       return void 0;
     }
     try {
-      if (!thumbnail.startsWith("data:image/")) {
-        throw new Error("Thumbnail deve ser uma imagem em formato base64");
-      }
-      const base64Data = thumbnail.replace(/^data:image\/\w+;base64,/, "");
+      const base64Data = thumbnail.replace(/^data:image\/[^;]+;base64,/, "");
       const imageBuffer = Buffer.from(base64Data, "base64");
-      const contentType = thumbnail.match(/^data:(image\/\w+);base64,/)?.[1] || "image/jpeg";
+      const contentType = thumbnail.match(/^data:(image\/[^;]+);base64,/)?.[1] || "image/jpeg";
       const filename = `thumbnail_${Date.now()}.${contentType.split("/")[1]}`;
       const upload = await this.uploadModel.create(imageBuffer, contentType, filename);
       return upload._id;
@@ -364,8 +360,8 @@ async function createRouter() {
   router.get("/", controller.getAll);
   router.get("/search", controller.search);
   router.get("/date/:data", controller.getByDate);
-  router.get("/:id", controller.getById);
   router.get("/:id/thumbnail", controller.getThumbnail);
+  router.get("/:id", controller.getById);
   router.post("/", authenticateJWT, controller.create);
   router.put("/:id", authenticateJWT, controller.update);
   router.delete("/:id", authenticateJWT, controller.delete);
@@ -393,9 +389,13 @@ async function init() {
   const router = await Posts_default();
   const porta = process.env.PORT || 3e3;
   app.use("/posts", router);
-  app.use("/", import_swagger_ui_express.default.serve, import_swagger_ui_express.default.setup(Swagger_default));
+  app.use("/api-docs", import_swagger_ui_express.default.serve, import_swagger_ui_express.default.setup(Swagger_default));
+  app.get("/", (req, res) => {
+    res.redirect("/api-docs");
+  });
   app.listen(porta, () => {
     console.log(`Servidor rodando em http://localhost:${porta}`);
+    console.log(`Documenta\xE7\xE3o Swagger em http://localhost:${porta}/api-docs`);
   });
 }
 init();

@@ -152,13 +152,9 @@ export class PostModel {
         }
 
         try {
-            if (!thumbnail.startsWith('data:image/')) {
-                throw new Error('Thumbnail deve ser uma imagem em formato base64');
-            }
-
-            const base64Data = thumbnail.replace(/^data:image\/\w+;base64,/, '');
+            const base64Data = thumbnail.replace(/^data:image\/[^;]+;base64,/, '');
             const imageBuffer = Buffer.from(base64Data, 'base64');
-            const contentType = thumbnail.match(/^data:(image\/\w+);base64,/)?.[1] || 'image/jpeg';
+            const contentType = thumbnail.match(/^data:(image\/[^;]+);base64,/)?.[1] || 'image/jpeg';
             const filename = `thumbnail_${Date.now()}.${contentType.split('/')[1]}`;
 
             const upload = await this.uploadModel.create(imageBuffer, contentType, filename);
