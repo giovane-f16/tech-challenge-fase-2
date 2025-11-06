@@ -104,7 +104,7 @@ var Post = class {
       }
     };
     this.getThumbnail = async (req, res) => {
-      const { id } = req.params;
+      const { id, id_thumbnail } = req.params;
       try {
         const upload = await this.post_model.getThumbnail(id);
         if (!upload) {
@@ -364,7 +364,7 @@ async function createRouter() {
   router.get("/", controller.getAll);
   router.get("/search", controller.search);
   router.get("/date/:data", controller.getByDate);
-  router.get("/:id/thumbnail", controller.getThumbnail);
+  router.get("/:id/thumbnail/:id_thumbnail", controller.getThumbnail);
   router.get("/:id", controller.getById);
   router.post("/", authenticateJWT, controller.create);
   router.put("/:id", authenticateJWT, controller.update);

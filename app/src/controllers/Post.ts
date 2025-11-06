@@ -88,7 +88,7 @@ export class Post {
     }
 
     getThumbnail = async (req: Request, res: Response) => {
-        const { id } = req.params;
+        const { id, id_thumbnail } = req.params;
         try {
             const upload = await this.post_model.getThumbnail(id);
             if (!upload) {
