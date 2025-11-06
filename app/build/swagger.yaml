@@ -30,17 +30,20 @@ paths:
                 - titulo
                 - conteudo
                 - autor
-                - thumbnail
               properties:
                 titulo:
                   type: string
+                  example: Meu Post
                 conteudo:
                   type: string
+                  example: Conteúdo do post
                 autor:
                   type: string
+                  example: João Silva
                 thumbnail:
                   type: string
-                  format: uri
+                  description: URL da imagem ou imagem em formato base64 (data:image/...)
+                  example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==
       responses:
         201:
           description: Post criado com sucesso
@@ -128,12 +131,17 @@ paths:
               properties:
                 titulo:
                   type: string
+                  example: Título Atualizado
                 conteudo:
                   type: string
+                  example: Conteúdo atualizado
                 autor:
                   type: string
+                  example: Maria Santos
                 thumbnail:
                   type: string
+                  description: URL da imagem ou imagem em formato base64 (data:image/...)
+                  example: data:image/jpeg;base64,/9j/4AAQSkZJRg...
       responses:
         200:
           description: Post atualizado com sucesso
@@ -153,6 +161,41 @@ paths:
       responses:
         204:
           description: Post deletado com sucesso
+
+  /posts/{id}/thumbnail:
+    get:
+      tags:
+        - Posts
+      summary: Retorna a imagem thumbnail de um post
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do post
+      responses:
+        200:
+          description: Imagem retornada com sucesso
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        404:
+          description: Thumbnail não encontrada para este post
 
 components:
   securitySchemes:

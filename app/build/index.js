@@ -103,12 +103,27 @@ var Post = class {
         res.status(500).json({ error: "Erro ao deletar post." });
       }
     };
+    this.getThumbnail = async (req, res) => {
+      const { id } = req.params;
+      try {
+        const upload = await this.post_model.getThumbnail(id);
+        if (!upload) {
+          res.status(404).json({ error: "Thumbnail n\xE3o encontrada para este post." });
+          return;
+        }
+        res.set("Content-Type", upload.contentType);
+        res.set("Content-Length", upload.size.toString());
+        res.send(upload.data);
+      } catch (error) {
+        res.status(500).json({ error: "Erro ao buscar thumbnail." });
+      }
+    };
     this.post_model = post_model;
   }
 };
 
 // src/models/Post.ts
-var import_mongoose = require("mongoose");
+var import_mongoose2 = require("mongoose");
 
 // src/schemas/Post.ts
 var import_zod = require("zod");
@@ -120,23 +135,65 @@ var postSchema = import_zod.z.object({
 });
 var partialPostSchema = postSchema.partial();
 
+// src/models/Upload.ts
+var import_mongoose = require("mongoose");
+var UploadModel = class {
+  constructor(database) {
+    const schema = new import_mongoose.Schema({
+      filename: { type: String, required: true },
+      data: { type: Buffer, required: true },
+      contentType: { type: String, required: true },
+      size: { type: Number, required: true },
+      uploadDate: { type: Date, default: Date.now }
+    }, {
+      versionKey: false,
+      collection: "uploads"
+    });
+    const instance = database.getInstance();
+    if (instance.models.Upload) {
+      this.model = instance.model("Upload");
+    } else {
+      this.model = instance.model("Upload", schema);
+    }
+  }
+  async create(data, contentType, filename) {
+    const upload = new this.model({
+      filename,
+      data,
+      contentType,
+      size: data.length,
+      uploadDate: /* @__PURE__ */ new Date()
+    });
+    return await upload.save();
+  }
+  async findById(id) {
+    return await this.model.findById(id).exec();
+  }
+  async delete(id) {
+    return await this.model.findByIdAndDelete(id).exec();
+  }
+};
+
 // src/models/Post.ts
 var PostModel = class {
   constructor(database) {
-    const schema = new import_mongoose.Schema({
+    this.uploadModel = new UploadModel(database);
+    const schema = new import_mongoose2.Schema({
       titulo: { type: String, required: true },
       conteudo: { type: String, required: true },
       autor: { type: String, required: true },
       data_criacao: { type: Date, required: true },
       data_atualizacao: { type: Date },
-      thumbnail: { type: String }
+      thumbnail: { type: String },
+      thumbnail_id: { type: import_mongoose2.Schema.Types.ObjectId, ref: "Upload" }
     }, {
       versionKey: false
     });
     const instance = database.getInstance();
-    this.model = instance.model("Post", schema);
     if (instance.models.Post) {
       this.model = instance.model("Post");
+    } else {
+      this.model = instance.model("Post", schema);
     }
   }
   async findAll() {
@@ -168,9 +225,14 @@ var PostModel = class {
     if (!result.success) {
       throw new Error(result.error.issues.map((e) => e.message).join("; "));
     }
+    const { thumbnailId, thumbnailToSave } = await this.handleThumbnailProcessing(result.data.thumbnail);
     const post = new this.model({
-      ...result.data,
-      data_criacao: /* @__PURE__ */ new Date()
+      titulo: result.data.titulo,
+      conteudo: result.data.conteudo,
+      autor: result.data.autor,
+      data_criacao: /* @__PURE__ */ new Date(),
+      thumbnail: thumbnailToSave,
+      thumbnail_id: thumbnailId
     });
     return await post.save();
   }
@@ -179,19 +241,69 @@ var PostModel = class {
     if (!result.success) {
       throw new Error(result.error.issues.map((e) => e.message).join("; "));
     }
+    const oldPost = await this.model.findById(id);
     const updateData = {
       ...result.data,
-      data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
+      data_atualizacao: /* @__PURE__ */ new Date()
     };
+    const { thumbnailId } = await this.handleThumbnailProcessing(
+      result.data.thumbnail,
+      oldPost?.thumbnail_id
+    );
+    if (thumbnailId) {
+      updateData.thumbnail = void 0;
+      updateData.thumbnail_id = thumbnailId;
+    }
     return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
   async delete(id) {
+    const post = await this.model.findById(id);
+    if (post?.thumbnail_id) {
+      await this.uploadModel.delete(post.thumbnail_id.toString());
+    }
     return await this.model.findByIdAndDelete(id).exec();
+  }
+  async getThumbnail(id) {
+    const post = await this.model.findById(id);
+    if (!post || !post.thumbnail_id) {
+      return null;
+    }
+    return await this.uploadModel.findById(post.thumbnail_id.toString());
+  }
+  async handleThumbnailProcessing(thumbnail, oldThumbnailId) {
+    let thumbnailId;
+    let thumbnailToSave = thumbnail;
+    if (thumbnail && thumbnail.trim() !== "") {
+      if (thumbnail.startsWith("data:image/")) {
+        thumbnailId = await this.processarThumbnail(thumbnail);
+        thumbnailToSave = void 0;
+        if (oldThumbnailId) {
+          await this.uploadModel.delete(oldThumbnailId.toString());
+        }
+      }
+    }
+    return { thumbnailId, thumbnailToSave };
+  }
+  async processarThumbnail(thumbnail) {
+    if (!thumbnail || thumbnail.trim() === "") {
+      return void 0;
+    }
+    try {
+      const base64Data = thumbnail.replace(/^data:image\/[^;]+;base64,/, "");
+      const imageBuffer = Buffer.from(base64Data, "base64");
+      const contentType = thumbnail.match(/^data:(image\/[^;]+);base64,/)?.[1] || "image/jpeg";
+      const filename = `thumbnail_${Date.now()}.${contentType.split("/")[1]}`;
+      const upload = await this.uploadModel.create(imageBuffer, contentType, filename);
+      return upload._id;
+    } catch (error) {
+      console.error("Erro ao processar thumbnail:", error);
+      throw new Error("Falha ao processar a imagem thumbnail");
+    }
   }
 };
 
 // src/providers/Database.ts
-var import_mongoose2 = __toESM(require("mongoose"));
+var import_mongoose3 = __toESM(require("mongoose"));
 var import_dotenv = __toESM(require("dotenv"));
 var _Database = class _Database {
   constructor() {
@@ -201,9 +313,9 @@ var _Database = class _Database {
     if (_Database.instance) {
       return _Database.instance;
     }
-    await import_mongoose2.default.connect(process.env.MONGODB_URI);
+    await import_mongoose3.default.connect(process.env.MONGODB_URI);
     console.log("Conectado ao MongoDB Atlas");
-    _Database.instance = import_mongoose2.default;
+    _Database.instance = import_mongoose3.default;
     return _Database.instance;
   }
   getInstance() {
@@ -252,6 +364,7 @@ async function createRouter() {
   router.get("/", controller.getAll);
   router.get("/search", controller.search);
   router.get("/date/:data", controller.getByDate);
+  router.get("/:id/thumbnail", controller.getThumbnail);
   router.get("/:id", controller.getById);
   router.post("/", authenticateJWT, controller.create);
   router.put("/:id", authenticateJWT, controller.update);
@@ -273,15 +386,20 @@ var Swagger_default = swaggerDocument;
 
 // index.ts
 var app = (0, import_express2.default)();
-app.use(import_express2.default.json());
+app.use(import_express2.default.json({ limit: "50mb" }));
+app.use(import_express2.default.urlencoded({ limit: "50mb", extended: true }));
 import_dotenv3.default.config();
 async function init() {
   const router = await Posts_default();
   const porta = process.env.PORT || 3e3;
   app.use("/posts", router);
-  app.use("/", import_swagger_ui_express.default.serve, import_swagger_ui_express.default.setup(Swagger_default));
+  app.use("/api-docs", import_swagger_ui_express.default.serve, import_swagger_ui_express.default.setup(Swagger_default));
+  app.get("/", (req, res) => {
+    res.redirect("/api-docs");
+  });
   app.listen(porta, () => {
     console.log(`Servidor rodando em http://localhost:${porta}`);
+    console.log(`Documenta\xE7\xE3o Swagger em http://localhost:${porta}/api-docs`);
   });
 }
 init();
