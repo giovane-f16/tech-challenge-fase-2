@@ -1,0 +1,205 @@
+openapi: 3.0.0
+info:
+  title: API PosTech fase 2
+  version: 1.0.0
+  description: Documentação da API PosTech fase 2
+
+paths:
+  /posts:
+    get:
+      tags:
+        - Posts
+      summary: Retorna todos os posts
+      responses:
+        200:
+          description: Lista de posts retornada com sucesso
+
+    post:
+      tags:
+        - Posts
+      summary: Cria um novo post
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - titulo
+                - conteudo
+                - autor
+              properties:
+                titulo:
+                  type: string
+                  example: Meu Post
+                conteudo:
+                  type: string
+                  example: Conteúdo do post
+                autor:
+                  type: string
+                  example: João Silva
+                thumbnail:
+                  type: string
+                  description: URL da imagem ou imagem em formato base64 (data:image/...)
+                  example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==
+      responses:
+        201:
+          description: Post criado com sucesso
+
+  /posts/search:
+    get:
+      tags:
+        - Posts
+      summary: Busca posts por parâmetros Título, Conteúdo ou Autor
+      parameters:
+        - in: query
+          name: titulo
+          schema:
+            type: string
+          required: false
+          description: Título de busca
+        - in: query
+          name: conteudo
+          schema:
+            type: string
+          required: false
+          description: Conteúdo para busca
+        - in: query
+          name: autor
+          schema:
+            type: string
+          required: false
+          description: Autor para busca
+      responses:
+        200:
+          description: Lista filtrada de posts
+
+  /posts/date/{data}:
+    get:
+      tags:
+        - Posts
+      summary: Busca posts por data
+      parameters:
+        - in: path
+          name: data
+          required: true
+          schema:
+            type: string
+          description: Data no formato YYYY-MM-DD
+      responses:
+        200:
+          description: Lista de posts da data especificada
+
+  /posts/{id}:
+    get:
+      tags:
+        - Posts
+      summary: Busca um post pelo ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do post
+      responses:
+        200:
+          description: Post encontrado
+        404:
+          description: Post não encontrado
+
+    put:
+      tags:
+        - Posts
+      summary: Atualiza um post existente
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                titulo:
+                  type: string
+                  example: Título Atualizado
+                conteudo:
+                  type: string
+                  example: Conteúdo atualizado
+                autor:
+                  type: string
+                  example: Maria Santos
+                thumbnail:
+                  type: string
+                  description: URL da imagem ou imagem em formato base64 (data:image/...)
+                  example: data:image/jpeg;base64,/9j/4AAQSkZJRg...
+      responses:
+        200:
+          description: Post atualizado com sucesso
+
+    delete:
+      tags:
+        - Posts
+      summary: Remove um post
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: Post deletado com sucesso
+
+  /posts/{id}/thumbnail:
+    get:
+      tags:
+        - Posts
+      summary: Retorna a imagem thumbnail de um post
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID do post
+      responses:
+        200:
+          description: Imagem retornada com sucesso
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        404:
+          description: Thumbnail não encontrada para este post
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
