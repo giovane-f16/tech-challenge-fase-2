@@ -77,15 +77,7 @@ export class PostModel {
             throw new Error(result.error.issues.map(e => e.message).join("; "));
         }
 
-        let thumbnailId;
-        let thumbnailToSave = result.data.thumbnail;
-
-        if (result.data.thumbnail && result.data.thumbnail.trim() !== "") {
-            if (result.data.thumbnail.startsWith('data:image/')) {
-                thumbnailId = await this.processarThumbnail(result.data.thumbnail);
-                thumbnailToSave = undefined;
-            }
-        }
+        const { thumbnailId, thumbnailToSave } = await this.handleThumbnailProcessing(result.data.thumbnail);
 
         const post = new this.model({
             titulo: result.data.titulo,
@@ -106,23 +98,19 @@ export class PostModel {
 
         const oldPost = await this.model.findById(id);
 
-        let thumbnailId;
         const updateData: any = {
             ...result.data,
             data_atualizacao: new Date()
         };
 
-        if (result.data.thumbnail && result.data.thumbnail.trim() !== "") {
-            if (result.data.thumbnail.startsWith('data:image/')) {
-                thumbnailId = await this.processarThumbnail(result.data.thumbnail);
+        const { thumbnailId } = await this.handleThumbnailProcessing(
+            result.data.thumbnail,
+            oldPost?.thumbnail_id
+        );
 
-                if (oldPost?.thumbnail_id) {
-                    await this.uploadModel.delete(oldPost.thumbnail_id.toString());
-                }
-
-                updateData.thumbnail = undefined;
-                updateData.thumbnail_id = thumbnailId;
-            }
+        if (thumbnailId) {
+            updateData.thumbnail = undefined;
+            updateData.thumbnail_id = thumbnailId;
         }
 
         return await this.model.findByIdAndUpdate(id, updateData, { new: true }).exec();
@@ -144,6 +132,28 @@ export class PostModel {
             return null;
         }
         return await this.uploadModel.findById(post.thumbnail_id.toString());
+    }
+
+    private async handleThumbnailProcessing(
+        thumbnail: string | undefined,
+        oldThumbnailId?: Types.ObjectId
+    ): Promise<{ thumbnailId?: Types.ObjectId; thumbnailToSave?: string }> {
+        let thumbnailId: Types.ObjectId | undefined;
+        let thumbnailToSave = thumbnail;
+
+        if (thumbnail && thumbnail.trim() !== "") {
+            if (thumbnail.startsWith('data:image/')) {
+                thumbnailId = await this.processarThumbnail(thumbnail);
+                thumbnailToSave = undefined;
+
+                // Delete old thumbnail if updating
+                if (oldThumbnailId) {
+                    await this.uploadModel.delete(oldThumbnailId.toString());
+                }
+            }
+        }
+
+        return { thumbnailId, thumbnailToSave };
     }
 
     private async processarThumbnail(thumbnail: string): Promise<Types.ObjectId | undefined> {
