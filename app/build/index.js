@@ -380,7 +380,7 @@ var import_swagger_ui_express = __toESM(require("swagger-ui-express"));
 var import_fs = __toESM(require("fs"));
 var import_js_yaml = __toESM(require("js-yaml"));
 var import_path = __toESM(require("path"));
-var swaggerPath = import_path.default.join(__dirname, "./swagger.yaml");
+var swaggerPath = import_path.default.join(__dirname, "swagger.yaml");
 var swaggerDocument = import_js_yaml.default.load(import_fs.default.readFileSync(swaggerPath, "utf8"));
 var Swagger_default = swaggerDocument;
 

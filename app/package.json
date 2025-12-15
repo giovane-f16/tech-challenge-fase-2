@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsup index.ts --out-dir build && cpx src/config/*.yaml build/",
+    "build": "tsup index.ts --out-dir build && cpx src/config/*.yaml build/config/",
     "start": "node build/index.js",
     "dev": "tsx watch index.ts"
   },
