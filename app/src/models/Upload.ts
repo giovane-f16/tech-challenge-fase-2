@@ -21,15 +21,16 @@ export class UploadModel {
             uploadDate: { type: Date, default: Date.now }
         }, {
             versionKey: false,
-            collection: 'uploads'
+            collection: "uploads"
         });
 
         const instance = database.getInstance();
+        const credenciaisDb = instance.connection.useDb("Credenciais");
 
-        if (instance.models.Upload) {
-            this.model = instance.model<Upload>("Upload");
+        if (credenciaisDb.models.Upload) {
+            this.model = credenciaisDb.model<Upload>("Upload");
         } else {
-            this.model = instance.model<Upload>("Upload", schema);
+            this.model = credenciaisDb.model<Upload>("Upload", schema);
         }
     }
 

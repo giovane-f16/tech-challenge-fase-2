@@ -150,10 +150,11 @@ var UploadModel = class {
       collection: "uploads"
     });
     const instance = database.getInstance();
-    if (instance.models.Upload) {
-      this.model = instance.model("Upload");
+    const credenciaisDb = instance.connection.useDb("Credenciais");
+    if (credenciaisDb.models.Upload) {
+      this.model = credenciaisDb.model("Upload");
     } else {
-      this.model = instance.model("Upload", schema);
+      this.model = credenciaisDb.model("Upload", schema);
     }
   }
   async create(data, contentType, filename) {
